@@ -7,8 +7,24 @@
 // Sets default values
 AFPS_WeaponImpactEffect::AFPS_WeaponImpactEffect()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
+	bAutoDestroyWhenFinished = true;
 }
 
+void AFPS_WeaponImpactEffect::SetProperty(const FHitResult& hitResult, UParticleSystem* impactFX, USoundCue* impactSound, FDecalData* decalData)
+{
+	if (impactFX)
+		UGameplayStatics::SpawnEmitterAtLocation(this, impactFX, hitResult.ImpactPoint, hitResult.ImpactNormal.Rotation());
+	if (impactSound)
+		UGameplayStatics::PlaySoundAtLocation(this, impactSound, hitResult.ImpactPoint);
+	if (decalData->DecalMaterial)
+	{
+		FRotator RandomDecalRotation = hitResult.ImpactNormal.Rotation();
+		RandomDecalRotation.Roll = FMath::FRandRange(-180.0f, 180.0f);
+
+		UGameplayStatics::SpawnDecalAttached(decalData->DecalMaterial, FVector(1.0f, decalData->DecalSize, decalData->DecalSize),
+			hitResult.Component.Get(), hitResult.BoneName,
+			hitResult.ImpactPoint, RandomDecalRotation, EAttachLocation::KeepWorldPosition,
+			decalData->LifeTime);
+			
+	}
+}

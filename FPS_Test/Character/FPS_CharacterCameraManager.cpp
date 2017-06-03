@@ -6,7 +6,6 @@
 void AFPS_CharacterCameraManager::UpdateCamera(float deltaTime)
 {
 	Super::UpdateCamera(deltaTime);
-	
 }
 
 

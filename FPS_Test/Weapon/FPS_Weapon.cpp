@@ -20,6 +20,8 @@ void AFPS_Weapon::InitProperty(float attackDistance, int maxChargeAmmo, int char
 	AttackDistance = attackDistance;
 	MaxChargeAmmo = maxChargeAmmo;
 	ChargedAmmo = chargedAmmo;
+	IsAiming = false;
+	IsFire = false;
 }
 
 void AFPS_Weapon::SetActive(bool isActive)
@@ -27,11 +29,8 @@ void AFPS_Weapon::SetActive(bool isActive)
 	SetActorHiddenInGame(!isActive);
 }
 
-void AFPS_Weapon::SetWeaponFireHitResult(const UCameraComponent* ViewCamera)
+void AFPS_Weapon::SetWeaponFireHitResult(FVector Start, FVector End)
 {
-	FVector Start = ViewCamera->GetComponentLocation();
-	FVector End = Start + ViewCamera->GetComponentRotation().Vector() * AttackDistance;
-
 	if (!GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ECollisionChannel::ECC_WorldStatic))
 	{
 		HitResult.ImpactPoint = End;

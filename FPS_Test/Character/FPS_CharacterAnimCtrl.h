@@ -42,14 +42,24 @@ private:
 	bool PlayingEndJump;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Jump", Meta = (AllowPrivateAccess = "true"))
 	bool IsLand;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "CharacterState", Meta = (AllowPrivateAccess = "true"))
+	bool IsAiming;
 
 	UAnimMontage* CurrentPlayMontage;
 	//Montage_Rifle
+	UPROPERTY()
 	UAnimMontage* RifleEquipAnim;
+	UPROPERTY()
 	UAnimMontage* RifleFireAnim;
+	UPROPERTY()
+	UAnimMontage* RifleAimingFireAnim;
 	//Montage_Launcher
+	UPROPERTY()
 	UAnimMontage* LauncherEquipAnim;
+	UPROPERTY()
 	UAnimMontage* LauncherFireAnim;
+	UPROPERTY()
+	UAnimMontage* LauncherAimingFireAnim;
 private :
 	void StopCurrentPlayMontage() { if (CurrentPlayMontage != NULL) Montage_Stop(0.1f, CurrentPlayMontage); }
 	void PlayMontageAnim(UAnimMontage* anim);
@@ -58,6 +68,7 @@ public :
 	//Montage
 	void PlayWeaponEquipAnim(EWeaponType& weaponType);
 	void PlayFireAnim(EWeaponType& weaponType);
+	void PlayAimingFireAnim(EWeaponType& weaponType);
 	void StopFireAnim(EWeaponType& weaponType);
 	//AnimNotify
 	UFUNCTION()
@@ -68,10 +79,12 @@ public :
 	void SetJumpStart(bool jumpStart) { PlayingStartJump = jumpStart; }
 	void SetJumpEnd(bool jumpEnd) { PlayingEndJump = jumpEnd; }
 	void SetIsLand(bool isLand) { IsLand = isLand; }
+	void SetAiming(bool isAiming) { IsAiming = isAiming; }
 	void SetWeaponSlotNum(int slotNum) { WeaponSlotNum = slotNum; }
 	void SetCharacterMovementState(ECharacterMovementState state) { MovementState = state; }
 	void SetCharacterActionState(ECharacterActionState state) { ActionState = state; }
 	//Getter
+	const bool& GetIsAiming() { return IsAiming; }
 	const ECharacterMovementState& GetCharacterMovementState() { return MovementState; }
 	const ECharacterActionState& GetCharacterActionState() { return ActionState; }
 };

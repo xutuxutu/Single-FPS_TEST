@@ -8,12 +8,16 @@ UFPS_CharacterAnimCtrl::UFPS_CharacterAnimCtrl()
 {
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> rifleEquip(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_Character_RifleEquip_Montage.BP_FPS_Character_RifleEquip_Montage'"));
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> rifleFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterRifleFire.BP_FPS_CharacterRifleFire'"));
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> rifleAimingFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterRifleAimingFire.BP_FPS_CharacterRifleAimingFire'"));
 	RifleEquipAnim = rifleEquip.Object;
 	RifleFireAnim = rifleFire.Object;
+	RifleAimingFireAnim = rifleAimingFire.Object;
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> launcherEquip(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterLauncherEquip_Montage.BP_FPS_CharacterLauncherEquip_Montage'"));
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> launcherFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterLauncherFire.BP_FPS_CharacterLauncherFire'"));
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> launcherAimingFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterLauncherAimingFire.BP_FPS_CharacterLauncherAimingFire'"));
 	LauncherEquipAnim = launcherEquip.Object;
 	LauncherFireAnim = launcherFire.Object;
+	LauncherAimingFireAnim = launcherAimingFire.Object;
 
 	WeaponSlotNum = 0;
 	MovementState = ECharacterMovementState::IDLE;
@@ -56,17 +60,22 @@ void UFPS_CharacterAnimCtrl::PlayFireAnim(EWeaponType& weaponType)
 	}
 }
 
-void UFPS_CharacterAnimCtrl::StopFireAnim(EWeaponType& weaponType)
+void UFPS_CharacterAnimCtrl::PlayAimingFireAnim(EWeaponType& weaponType)
 {
 	switch (weaponType)
 	{
 	case EWeaponType::RIFLE:
-		StopCurrentPlayMontage();
+		PlayMontageAnim(RifleAimingFireAnim);
 		break;
 	case EWeaponType::LAUNCHER:
-		CurrentPlayMontage = NULL;
+		PlayMontageAnim(LauncherAimingFireAnim);
 		break;
 	}
+}
+
+void UFPS_CharacterAnimCtrl::StopFireAnim(EWeaponType& weaponType)
+{
+	StopCurrentPlayMontage();
 }
 
 void UFPS_CharacterAnimCtrl::AnimNotify_ActionEnd(UAnimNotify* notify)

@@ -3,33 +3,33 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "FPS_WeaponType.h"
 #include "FPS_Weapon.generated.h"
-
-UENUM()
-enum class EWeaponType : uint8
-{
-	NONE,
-	RIFLE,
-	LAUNCHER,
-};
 
 UCLASS()
 class FPS_TEST_API AFPS_Weapon : public AActor
 {
 	GENERATED_BODY()
 private :
+	UPROPERTY()
 	USkeletalMeshComponent* Mesh;
+	UPROPERTY()
 	UParticleSystem* MuzzleFX;
+	UPROPERTY()
 	UParticleSystemComponent* MuzzleFX_Playing;
+	UPROPERTY()
 	USoundCue* FireSound;
+	UPROPERTY()
 	USoundCue* FireEndSound;
+	UPROPERTY()
 	UAudioComponent* FireSound_Playing;
 
+	FHitResult HitResult;
 	FName MuzzleFlashPosition;
 	EWeaponType WeaponType;
 	bool IsFire;
+	bool IsAiming;
 	float AttackDistance;
-	FHitResult HitResult;
 	int ChargedAmmo;
 	int MaxChargeAmmo;
 public:	
@@ -46,7 +46,7 @@ protected:
 	void SetIsFire(bool isFire) { IsFire = isFire; }
 	void SetWeaponType(EWeaponType weaponType) { WeaponType = weaponType; }
 	void SetMuzzleFX(UParticleSystem* muzzleFX) { MuzzleFX = muzzleFX; }
-	void SetWeaponFireHitResult(const UCameraComponent* ViewCamera);
+	void SetWeaponFireHitResult(FVector Start, FVector End);
 
 	void ActivateMuzzleFX();
 	void DeactivateMuzzleFX();
@@ -57,10 +57,13 @@ protected:
 public:		
 	void InitProperty(float attackDistance, int maxChargeAmmo, int chargedAmmo);
 	void IncreaseAmmoQuantity(int ammo) { ChargedAmmo += ammo; }
-
-	void SetActive(bool isActive);
 	virtual void StartFire(const UCameraComponent* ViewCamera) { }
-	virtual void EndFire() { }
+	virtual bool EndFire() { return false; }
+	//Setter
+	void SetActive(bool isActive);
+	virtual void SetAiming(bool isAiming) { IsAiming = isAiming; }
+	//Getter
 	const EWeaponType& GetWeaponType() { return WeaponType; }
 	int GetChargedAmmoQuantity() { return ChargedAmmo; }
+	bool GetIsAiming() { return IsAiming; }
 };

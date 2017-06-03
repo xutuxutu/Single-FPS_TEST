@@ -2,6 +2,7 @@
 
 #include "FPS_Test.h"
 #include "FPS_Character.h"
+#include "Weapon/FPS_WeaponRifle.h"
 
 // Sets default values
 AFPS_Character::AFPS_Character()
@@ -32,10 +33,11 @@ AFPS_Character::AFPS_Character()
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0, 0, -126), FRotator(0, -90, 0));
 	GetMesh()->SetEnableGravity(false);
 	SpringArm->TargetArmLength = -7;
-	SpringArm->SetRelativeLocationAndRotation(FVector(0, 0, 147), FRotator(0, 90, 0));
+	SpringArm->SetRelativeLocationAndRotation(FVector(0, 0, 149.4f), FRotator(0, 90, 0));
 	//Setup MemberProperty
 	ReserveAmmo = 50;
-	MOVE_SPEED = 100;
+	MOVE_SPEED_DEFAULT = 100;
+	MOVE_SPEED_AIMING = 50;
 	CameraRotSpeed = 100;
 
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
@@ -75,6 +77,10 @@ void AFPS_Character::SetPitchInput(float pitch)
 	RotPibot->SetWorldRotation(pibotRot);
 }
 
+void AFPS_Character::CameraShake()
+{
+}
+
 void AFPS_Character::SetEquipAnim()
 {
 	AnimCtrl->SetCharacterActionState(ECharacterActionState::EQUIP);
@@ -100,7 +106,11 @@ void AFPS_Character::StartFire()
 	if (CurrentEquipWeapon != NULL)
 	{
 		AnimCtrl->SetCharacterActionState(ECharacterActionState::FIRE);
-		AnimCtrl->PlayFireAnim(CurrentEquipWeaponType);
+		if(AnimCtrl->GetIsAiming())
+			AnimCtrl->PlayAimingFireAnim(CurrentEquipWeaponType);
+		else
+			AnimCtrl->PlayFireAnim(CurrentEquipWeaponType);
+
 		CurrentEquipWeapon->StartFire(Camera);
 	}
 }
@@ -109,10 +119,40 @@ void AFPS_Character::EndFire()
 {
 	if (CurrentEquipWeapon != NULL)
 	{
-		AnimCtrl->SetCharacterActionState(ECharacterActionState::PEACE);
-		AnimCtrl->StopFireAnim(CurrentEquipWeaponType);
-		CurrentEquipWeapon->EndFire();
+		if (CurrentEquipWeapon->EndFire())
+		{
+			AnimCtrl->SetCharacterActionState(ECharacterActionState::PEACE);
+			AnimCtrl->StopFireAnim(CurrentEquipWeaponType);
+		}
 	}
+}
+void AFPS_Character::SetAiming_ZoomIn()
+{
+	if (CurrentEquipWeapon != NULL)
+	{
+		if (AnimCtrl->GetCharacterActionState() == ECharacterActionState::FIRE)
+			EndFire();
+
+		AnimCtrl->SetAiming(true);
+		CurrentEquipWeapon->SetAiming(true);
+	}
+}
+
+void AFPS_Character::SetAiming_ZoomOut()
+{
+	if (CurrentEquipWeapon != NULL)
+	{
+		if (AnimCtrl->GetCharacterActionState() == ECharacterActionState::FIRE)
+			EndFire();
+
+		AnimCtrl->SetAiming(false);
+		CurrentEquipWeapon->SetAiming(false);
+	}
+}
+
+const float AFPS_Character::GetCurrentWeaponSpread() 
+{
+	return CurrentEquipWeaponType == EWeaponType::RIFLE ? Cast<AFPS_WeaponRifle>(CurrentEquipWeapon)->GetCurrentSpread() : 2; 
 }
 
 void AFPS_Character::Debug()

@@ -4,6 +4,7 @@
 #include "FPS_CharacterController.h"
 #include "FPS_CharacterCameraManager.h"
 #include "Weapon/FPS_WeaponList.h"
+#include "Effect/FPS_WeaponEffectManager.h"
 
 AFPS_CharacterController::AFPS_CharacterController()
 {
@@ -18,7 +19,10 @@ AFPS_CharacterController::AFPS_CharacterController()
 	PossibleJump = true;
 	PossibleMove = true;
 	CurrentJumpForce = 0;
+	CurrentCameraFOV = CAMERA_DEFAULT_FOV;
 	IsLand = true;
+	//PlayerCameraManagerClass = AFPS_CharacterCameraManager::StaticClass();
+	FPS_WeaponEffectManager::CreateInstance();
 }
 
 void AFPS_CharacterController::BeginPlay()
@@ -30,6 +34,7 @@ void AFPS_CharacterController::BeginPlay()
 	EquipWeapon_Rifle();
 
 	CapsuleHalfHeight = FVector(0, 0, Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	FPS_WeaponEffectManager::GetInstance()->SetImpactEffect(GetWorld()->SpawnActor<AFPS_WeaponImpactEffect>());
 }
 
 void AFPS_CharacterController::InitWeaponList()
@@ -68,6 +73,8 @@ void AFPS_CharacterController::SetupInputComponent()
 	InputComponent->BindAction("WeaponSlot_Rifle", IE_Pressed, this, &AFPS_CharacterController::EquipWeapon_Rifle);
 	InputComponent->BindAction("WeaponSlot_Launcher", IE_Pressed, this, &AFPS_CharacterController::EquipWeapon_Launcher);
 	InputComponent->BindAction("Jump", IE_Pressed, this, &AFPS_CharacterController::JumpKeyDown);
+	InputComponent->BindAction("Aiming", IE_Pressed, this, &AFPS_CharacterController::AimingButtonPress);
+	InputComponent->BindAction("Aiming", IE_Released, this, &AFPS_CharacterController::AimingButtonRelease);
 }
 void AFPS_CharacterController::MouseMove_X(float x) { MouseXY.X = x; }
 void AFPS_CharacterController::MouveMove_Y(float y) { MouseXY.Y = y; }
@@ -75,10 +82,25 @@ void AFPS_CharacterController::ForwardMoveKeyDown(float forward) { MoveVector.X 
 void AFPS_CharacterController::RightMoveKeyDown(float right) { MoveVector.Y = right; }
 void AFPS_CharacterController::FireButtonPress() 
 {
-	Character->StartFire(); 
-	PlayCameraShakeWeaponFire(EWeaponType::RIFLE);
+	if (IsPossibleFire())
+	{
+		Character->StartFire();
+		PlayCameraShakeWeaponFire(EWeaponType::RIFLE);
+	}
 }
 void AFPS_CharacterController::FireButtonRelease() { Character->EndFire(); }
+void AFPS_CharacterController::AimingButtonPress() 
+{
+	Character->SetAiming_ZoomIn(); 
+	FTimerDelegate del = FTimerDelegate::CreateUObject(this, &AFPS_CharacterController::SetCameraFOV, CAMERA_AIMING_FOV);
+	GetWorldTimerManager().SetTimer(AimingTH, del, GWorld->GetDeltaSeconds(), true);
+}
+void AFPS_CharacterController::AimingButtonRelease() 
+{
+	Character->SetAiming_ZoomOut(); 
+	FTimerDelegate del = FTimerDelegate::CreateUObject(this, &AFPS_CharacterController::SetCameraFOV, CAMERA_DEFAULT_FOV);
+	GetWorldTimerManager().SetTimer(AimingTH, del, GWorld->GetDeltaSeconds(), true);
+}
 void AFPS_CharacterController::JumpKeyDown()
 {
 	if (IsPossibleJump())
@@ -130,6 +152,13 @@ void AFPS_CharacterController::CheckGround()
 		Character->SetLandAnim();
 	}
 }
+void AFPS_CharacterController::SetCameraFOV(float targetFOV)
+{
+	CurrentCameraFOV = FMath::Lerp(CurrentCameraFOV, targetFOV, GWorld->GetDeltaSeconds() * 10);
+	if (FMath::Abs(targetFOV - CurrentCameraFOV) < 0.5f)
+		CurrentCameraFOV = targetFOV;
+	Character->SetCameraFOV(CurrentCameraFOV);
+}
 
 void AFPS_CharacterController::EndJump()
 {
@@ -143,6 +172,7 @@ void AFPS_CharacterController::EquipWeapon_Rifle()
 	{
 		AFPS_Weapon* Rifle = WeaponList->GetWeapon(EWeaponType::RIFLE);
 		Character->EquipWeapon(Rifle);
+		WeaponEquipTime = GWorld->GetTimeSeconds();
 	}
 }
 
@@ -152,13 +182,17 @@ void AFPS_CharacterController::EquipWeapon_Launcher()
 	{
 		AFPS_Weapon* Launcher = WeaponList->GetWeapon(EWeaponType::LAUNCHER);
 		Character->EquipWeapon(Launcher);
+		WeaponEquipTime = GWorld->GetTimeSeconds();
 	}
 }
 
 bool AFPS_CharacterController::IsPossibleEquipWeapon(EWeaponType type)
 {
-	if (Character->GetCharacterActionState() == ECharacterActionState::EQUIP ||
-		Character->GetCurrentEquipWeaponType() == type)
+	if (Character->GetIsAiming())
+		return false;
+	if (Character->GetCharacterActionState() == ECharacterActionState::FIRE || Character->GetCharacterActionState() == ECharacterActionState::EQUIP)
+		return false;
+	if (Character->GetCurrentEquipWeaponType() == type)
 		return false;
 
 	return true;
@@ -181,6 +215,13 @@ bool AFPS_CharacterController::IsPossibleJump()
 	return true;
 }
 
+bool AFPS_CharacterController::IsPossibleFire()
+{
+	if (Character->GetCharacterActionState() == ECharacterActionState::EQUIP)
+		return false;
+	return true;
+}
+
 void AFPS_CharacterController::PlayCameraShakeWeaponFire(EWeaponType weaponType)
 {
 	/*
@@ -194,6 +235,6 @@ void AFPS_CharacterController::PlayCameraShakeWeaponFire(EWeaponType weaponType)
 		break;
 	}*/
 	AB_LOG(Warning, TEXT("Shake"));
-	ClientPlayCameraShake(CamShake_RifleFire, 1, ECameraAnimPlaySpace::CameraLocal, FRotator(0, 0, 0));
+	ClientPlayCameraShake(CamShake_RifleFire, 1, ECameraAnimPlaySpace::World, FRotator(0, 0, 0));
 	ClientPlayForceFeedback(FireForceFeedback, false, "Weapon");
 }

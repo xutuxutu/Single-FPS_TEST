@@ -2,6 +2,8 @@
 
 #include "FPS_Test.h"
 #include "FPS_WeaponRifle.h"
+#include "Effect/FPS_WeaponImpactEffect.h"
+#include "Effect/FPS_WeaponEffectManager.h"
 
 
 // Sets default values
@@ -21,6 +23,13 @@ AFPS_WeaponRifle::AFPS_WeaponRifle() : AFPS_Weapon()
 	TrailFX = trailFX.Object;
 	TrailFX_Playing = NULL;
 	SetWeaponType(EWeaponType::RIFLE);
+	CurrentSpread = SPREAD_DEFAULT;
+}
+
+void AFPS_WeaponRifle::SetAiming(bool isAiming)
+{
+	Super::SetAiming(isAiming);
+	InitCurrentSpread();
 }
 
 void AFPS_WeaponRifle::StartFire(const UCameraComponent* ViewCamera)
@@ -30,31 +39,48 @@ void AFPS_WeaponRifle::StartFire(const UCameraComponent* ViewCamera)
 		SetIsFire(true);
 		ActivateMuzzleFX();
 		PlayFireSound();
+		InitCurrentSpread();
 		if (TrailFX != NULL)
 		{
 			FTimerDelegate Del = FTimerDelegate::CreateUObject(this, &AFPS_WeaponRifle::PrintTrailFX, ViewCamera);
-			GetWorldTimerManager().SetTimer(TimerHandle, Del, 0.2f, true);
+			GetWorldTimerManager().SetTimer(TimerHandle, Del, 0.1f, true, 0.0f);
 		}
 	}
 }
 
-void AFPS_WeaponRifle::EndFire()
+bool AFPS_WeaponRifle::EndFire()
 {
 	if (GetIsFire())
 	{
+		GetWorldTimerManager().ClearTimer(TimerHandle);
 		SetIsFire(false);
 		DeactivateMuzzleFX();
 		StopFireSound();
-		GetWorldTimerManager().ClearTimer(TimerHandle);
+		InitCurrentSpread();
+		return true;
 	}
+	return false;
 }
 
 void AFPS_WeaponRifle::PrintTrailFX(const UCameraComponent* ViewCamera)
 {
-	FVector MuzzleLoc = GetMesh()->GetSocketLocation(GetMuzzleFlashSocketName());
-	SetWeaponFireHitResult(ViewCamera);
+	const int32 RandomSeed = FMath::Rand();
+	FRandomStream WeaponRandomStream(RandomSeed);
+	const float ConeHalfAngle = FMath::DegreesToRadians(CurrentSpread * 0.5f);
 
-	TrailFX_Playing = UGameplayStatics::SpawnEmitterAtLocation(this, TrailFX, MuzzleLoc);
+	FVector Start = ViewCamera->GetComponentLocation();
+	FVector Direcion = WeaponRandomStream.VRandCone(ViewCamera->GetComponentRotation().Vector(), ConeHalfAngle, ConeHalfAngle);
+	FVector End = Start + Direcion * GetAttackDistance();
+	SetWeaponFireHitResult(Start, End);
+
+	if (!GetIsAiming())
+	{
+		if (CurrentSpread < SPREAD_MAX)
+			CurrentSpread += SPREAD_INCREMENT;
+	}
+
+
+	TrailFX_Playing = UGameplayStatics::SpawnEmitterAtLocation(this, TrailFX, GetMesh()->GetSocketLocation(GetMuzzleFlashSocketName()));
 	TrailFX_Playing->SetVectorParameter(TEXT("ShockBeamEnd"), GetHitResult().ImpactPoint);
 
 	PrintBulletHitFX();
@@ -62,10 +88,10 @@ void AFPS_WeaponRifle::PrintTrailFX(const UCameraComponent* ViewCamera)
 
 void AFPS_WeaponRifle::PrintBulletHitFX()
 {
-	const FHitResult& hitResult = GetHitResult();
-
-	if (hitResult.Actor != nullptr)
+	if (GetHitResult().Actor != nullptr)
 	{
-
+		FTransform const SpawnTransform(GetHitResult().ImpactNormal.Rotation(), GetHitResult().ImpactPoint);
+		FPS_WeaponEffectManager* EffectList = FPS_WeaponEffectManager::GetInstance();
+		EffectList->CreateRifleImpactEffect(GetHitResult());
 	}
 }

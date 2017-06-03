@@ -12,7 +12,7 @@ UCLASS()
 class FPS_TEST_API AFPS_CharacterController : public APlayerController
 {
 	GENERATED_BODY()
-private :
+private:
 	AFPS_Character* Character;
 	class FFPS_WeaponList* WeaponList;
 	TSubclassOf<UCameraShake> CamShake_RifleFire;
@@ -20,25 +20,30 @@ private :
 	UForceFeedbackEffect* FireForceFeedback;
 
 	FTimerHandle JumpTH;
+	FTimerHandle AimingTH;
 	FVector CapsuleHalfHeight;
 	FVector MoveVector;
 	FVector2D MouseXY;
 
-	const float GRAVITY = 10;
-	const float JUMP_FORCE = 100;
+	const float GRAVITY = 10.f;
+	const float JUMP_FORCE = 100.f;
+	const float CAMERA_DEFAULT_FOV = 90.f;
+	const float CAMERA_AIMING_FOV = 60.f;
 
 	float CurrentJumpForce;
+	float CurrentCameraFOV;
+	float WeaponEquipTime;
 	bool IsLand;
 
 	bool PossibleJump;
 	bool PossibleMove;
-public :
+public:
 	AFPS_CharacterController();
-protected :
+protected:
 	virtual void BeginPlay() override;
 	virtual void PlayerTick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
-private :
+private:
 	void InitWeaponList();
 	//BindFuction
 	void MouseMove_X(float x);
@@ -48,6 +53,8 @@ private :
 	void JumpKeyDown();
 	void FireButtonPress();
 	void FireButtonRelease();
+	void AimingButtonPress();
+	void AimingButtonRelease();
 
 	//Action
 	void CharacterRotate();
@@ -55,14 +62,19 @@ private :
 	void EquipWeapon_Rifle();
 	void EquipWeapon_Launcher();
 	void CheckGround();
+	void SetCameraFOV(float targetFOV);
 
 	//Possible Action & Movement
 	bool IsPossibleMove();
 	bool IsPossibleJump();
 	bool IsPossibleEquipWeapon(EWeaponType type);
+	bool IsPossibleFire();
 
-public :
+public:
 	//Notify
 	void EndJump();
 	void PlayCameraShakeWeaponFire(EWeaponType weaponType);
+	//Getter
+	float GetCurrentEquipWeaponSpread() { return Character->GetCurrentWeaponSpread(); }
+	float GetWeaponEquipTime() { return WeaponEquipTime; }
 };

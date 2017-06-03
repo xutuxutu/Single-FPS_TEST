@@ -11,8 +11,11 @@ class FPS_TEST_API AFPS_WeaponProjectile : public AActor
 	GENERATED_BODY()
 private:
 	float FireSpeed;
+	UPROPERTY()
 	USphereComponent* SphereCollider;
+	UPROPERTY()
 	UParticleSystemComponent* ProjectileParticle;
+	UPROPERTY()
 	UProjectileMovementComponent* MovementComponent;
 public:	
 	// Sets default values for this actor's properties
