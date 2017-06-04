@@ -60,11 +60,15 @@ private:
 	UAnimMontage* LauncherFireAnim;
 	UPROPERTY()
 	UAnimMontage* LauncherAimingFireAnim;
+
+	//Notify Target
+	class AFPS_CharacterController* CharacterController;
 private :
 	void StopCurrentPlayMontage() { if (CurrentPlayMontage != NULL) Montage_Stop(0.1f, CurrentPlayMontage); }
 	void PlayMontageAnim(UAnimMontage* anim);
 public :
 	UFPS_CharacterAnimCtrl();
+	void InitNotifyTarget(); 
 	//Montage
 	void PlayWeaponEquipAnim(EWeaponType& weaponType);
 	void PlayFireAnim(EWeaponType& weaponType);
@@ -75,6 +79,8 @@ public :
 	void AnimNotify_ActionEnd(UAnimNotify* notify);
 	UFUNCTION()
 	void AnimNotify_JumpEnd(UAnimNotify* notify);
+	UFUNCTION()
+	void AnimNotify_FireEnd(UAnimNotify* notify);
 	//Setter
 	void SetJumpStart(bool jumpStart) { PlayingStartJump = jumpStart; }
 	void SetJumpEnd(bool jumpEnd) { PlayingEndJump = jumpEnd; }

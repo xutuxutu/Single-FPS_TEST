@@ -14,6 +14,6 @@ public:
 	// Sets default values for this actor's properties
 	AFPS_WeaponLauncher();
 protected:
-
 public:	
+	virtual void StartFire(const UCameraComponent* ViewCamera);
 };

@@ -35,6 +35,7 @@ private:
 	float WeaponEquipTime;
 	bool IsLand;
 
+	bool PossibleFire;
 	bool PossibleJump;
 	bool PossibleMove;
 public:
@@ -73,6 +74,7 @@ private:
 public:
 	//Notify
 	void EndJump();
+	void SetOnceFireEnd() { PossibleFire = true; }
 	void PlayCameraShakeWeaponFire(EWeaponType weaponType);
 	//Getter
 	float GetCurrentEquipWeaponSpread() { return Character->GetCurrentWeaponSpread(); }

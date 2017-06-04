@@ -18,15 +18,48 @@ FPS_WeaponEffectManager::FPS_WeaponEffectManager()
 	ImpactSound_Rifle = impactSound_Rifle.Object;
 	ImpactSound_Launcher = impactSound_Launcher.Object;
 	ImpactDecalMaterial_Rifle.DecalMaterial = impactDecalMat_Rifle.Object;
+	ImpactDecalMaterial_Rifle.DecalSize = 15;
+
+	ImpactDecalMaterial_Launcher.DecalMaterial = impactDecalMat_Rifle.Object;
+	ImpactDecalMaterial_Launcher.DecalSize = 60;
 }
 
 FPS_WeaponEffectManager::~FPS_WeaponEffectManager()
 {
 }
 
+void FPS_WeaponEffectManager::SpawnEffectActors()
+{
+	SpawnImpactEffectActor();
+	SetLauncherProjectile();
+}
+void FPS_WeaponEffectManager::SpawnImpactEffectActor() { ImpactEffect = GWorld->SpawnActor<AFPS_WeaponImpactEffect>(); }
+void FPS_WeaponEffectManager::SetLauncherProjectile()
+{
+	for(int i = 0; i < 20; ++i)
+		Projectile_Launcher[i] = GWorld->SpawnActor<AFPS_WeaponProjectile_Launcher>();
+}
+
+void FPS_WeaponEffectManager::FireLauncherProjectile(FVector location, FRotator rotation, float maxDistance)
+{
+	for (int i = 0; i < 20; ++i)
+	{
+		if (!Projectile_Launcher[i]->GetIsActive())
+		{
+			Projectile_Launcher[i]->StartFire(location, rotation, maxDistance);
+			return;
+		}
+	}
+}
+
 void FPS_WeaponEffectManager::CreateRifleImpactEffect(const FHitResult& hitResult)
 {
 	ImpactEffect->SetProperty(hitResult, GetImpactEffect(EWeaponType::RIFLE), GetImpactSound(EWeaponType::RIFLE), GetImpactDecalMaterial(EWeaponType::RIFLE));
+}
+
+void FPS_WeaponEffectManager::CreateLauncherProjectileImpactEffect(const FHitResult& hitResult)
+{
+	ImpactEffect->SetProperty(hitResult, GetImpactEffect(EWeaponType::LAUNCHER), GetImpactSound(EWeaponType::LAUNCHER), GetImpactDecalMaterial(EWeaponType::LAUNCHER));
 }
 
 void FPS_WeaponEffectManager::CreateInstance()
@@ -60,6 +93,7 @@ FDecalData* FPS_WeaponEffectManager::GetImpactDecalMaterial(EWeaponType weaponTy
 	switch (weaponType)
 	{
 		case EWeaponType::RIFLE :		return &ImpactDecalMaterial_Rifle;
+		case EWeaponType::LAUNCHER :	return &ImpactDecalMaterial_Launcher;
 	}
 	return nullptr;
 }

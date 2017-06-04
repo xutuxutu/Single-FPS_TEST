@@ -31,7 +31,7 @@ protected:
 	void PrintBulletHitFX();
 public:	
 	virtual void StartFire(const UCameraComponent* ViewCamera) override;
-	virtual bool EndFire() override;
+	virtual void EndFire() override;
 	virtual void SetAiming(bool isAiming) override;
 	void InitCurrentSpread() { GetIsAiming() ? CurrentSpread = SPREAD_AIMING : CurrentSpread = SPREAD_DEFAULT; }
 

@@ -10,18 +10,34 @@ class FPS_TEST_API AFPS_WeaponProjectile : public AActor
 {
 	GENERATED_BODY()
 private:
-	float FireSpeed;
+	FTimerHandle CheckMoveDistTH;
+	FVector FireStartLocation;
+	float MaxDistance;
+	const float FireSpeed = 2000;
+	bool IsActive;
 	UPROPERTY()
 	USphereComponent* SphereCollider;
 	UPROPERTY()
-	UParticleSystemComponent* ProjectileParticle;
+	UParticleSystem* ProjectileParticle;
+	UPROPERTY()
+	UParticleSystemComponent* ProjectileParticle_Playing;
 	UPROPERTY()
 	UProjectileMovementComponent* MovementComponent;
+	UPROPERTY()
+	UAudioComponent* ProjectileSound;
+protected:
+	virtual void PostInitializeComponents() override;
+	void SetProjectileParticle(UParticleSystem* particle);
+	void CheckMoveDistance();
 public:	
 	// Sets default values for this actor's properties
 	AFPS_WeaponProjectile();
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-public:	
+	void StartFire(FVector location, FRotator rotation, float maxDistance);
+	void ActivateActor();
+	void DeactivateActor();
+
+	UFUNCTION()
+	void OnImpact(const FHitResult& HitResult);
+
+	bool GetIsActive() { return IsActive; }
 };

@@ -28,6 +28,12 @@ UFPS_CharacterAnimCtrl::UFPS_CharacterAnimCtrl()
 	IsLand = true;
 	CurrentPlayMontage = NULL;
 }
+
+void UFPS_CharacterAnimCtrl::InitNotifyTarget()
+{
+	CharacterController = Cast<AFPS_CharacterController>(GetWorld()->GetFirstPlayerController());
+}
+
 void UFPS_CharacterAnimCtrl::PlayMontageAnim(UAnimMontage* anim)
 {
 	StopCurrentPlayMontage();
@@ -95,6 +101,13 @@ void UFPS_CharacterAnimCtrl::AnimNotify_JumpEnd(UAnimNotify* notify)
 	else if (PlayingEndJump)
 	{
 		PlayingEndJump = false;
-		Cast<AFPS_CharacterController>(GetWorld()->GetFirstPlayerController())->EndJump();
+		if(CharacterController)
+			CharacterController->EndJump();
 	}
+}
+
+void UFPS_CharacterAnimCtrl::AnimNotify_FireEnd(UAnimNotify* notify)
+{
+	if(CharacterController)
+		CharacterController->SetOnceFireEnd();
 }

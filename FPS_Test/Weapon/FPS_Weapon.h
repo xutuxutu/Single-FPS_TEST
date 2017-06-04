@@ -27,6 +27,7 @@ private :
 	FHitResult HitResult;
 	FName MuzzleFlashPosition;
 	EWeaponType WeaponType;
+	bool LoopFireWeapon;
 	bool IsFire;
 	bool IsAiming;
 	float AttackDistance;
@@ -42,6 +43,7 @@ protected:
 	const bool& GetIsFire() { return IsFire; }
 	const FHitResult& GetHitResult() { return HitResult; }
 
+	void SetLoopFireWeapon(bool isLoop) { LoopFireWeapon = isLoop; }
 	void SetFireSound(USoundCue* fireSound, USoundCue* fireEndSound) { FireSound = fireSound; FireEndSound = fireEndSound; }
 	void SetIsFire(bool isFire) { IsFire = isFire; }
 	void SetWeaponType(EWeaponType weaponType) { WeaponType = weaponType; }
@@ -58,11 +60,12 @@ public:
 	void InitProperty(float attackDistance, int maxChargeAmmo, int chargedAmmo);
 	void IncreaseAmmoQuantity(int ammo) { ChargedAmmo += ammo; }
 	virtual void StartFire(const UCameraComponent* ViewCamera) { }
-	virtual bool EndFire() { return false; }
+	virtual void EndFire() { }
 	//Setter
 	void SetActive(bool isActive);
 	virtual void SetAiming(bool isAiming) { IsAiming = isAiming; }
 	//Getter
+	const bool& GetIsLoopFire() { return LoopFireWeapon; }
 	const EWeaponType& GetWeaponType() { return WeaponType; }
 	int GetChargedAmmoQuantity() { return ChargedAmmo; }
 	bool GetIsAiming() { return IsAiming; }

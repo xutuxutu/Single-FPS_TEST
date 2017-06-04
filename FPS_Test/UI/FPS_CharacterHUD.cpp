@@ -16,11 +16,6 @@ AFPS_CharacterHUD::AFPS_CharacterHUD()
 	Crosshair[ECrosshairDirection::Top] = UCanvas::MakeIcon(CharacterMainHUD, 74, 371, 9, 25); // top
 	Crosshair[ECrosshairDirection::Bottom] = UCanvas::MakeIcon(CharacterMainHUD, 74, 415, 9, 25); // bottom
 	Crosshair[ECrosshairDirection::Center] = UCanvas::MakeIcon(CharacterMainHUD, 75, 403, 7, 7); // center
-
-	AB_LOG(Warning, TEXT("%f"), Crosshair[ECrosshairDirection::Center].U);
-	AB_LOG(Warning, TEXT("%f"), Crosshair[ECrosshairDirection::Center].V);
-	AB_LOG(Warning, TEXT("%f"), Crosshair[ECrosshairDirection::Center].UL);
-	AB_LOG(Warning, TEXT("%f"), Crosshair[ECrosshairDirection::Center].VL);
 }
 
 void AFPS_CharacterHUD::BeginPlay()

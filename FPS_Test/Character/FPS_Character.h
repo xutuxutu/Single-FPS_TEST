@@ -40,8 +40,6 @@ public:
 	AFPS_Character();
 	void InitProperty();
 	void EquipWeapon(class AFPS_Weapon* weapon);
-	void SetPitchInput(float pitch);
-	void SetCameraFOV(float FOV) { Camera->FieldOfView = FOV; }
 	void CameraShake();
 
 	//Animation
@@ -49,7 +47,7 @@ public:
 	void SetMoveAnim() { AnimCtrl->SetCharacterMovementState(ECharacterMovementState::MOVE); }
 	void SetJumpAnim();
 	void SetLandAnim();
-	void StartFire();
+	bool StartFire();
 	void EndFire();
 	void SetAiming_ZoomIn();
 	void SetAiming_ZoomOut();
@@ -66,6 +64,9 @@ public:
 	const ECharacterActionState& GetCharacterActionState() { return AnimCtrl->GetCharacterActionState(); }
 	const ECharacterMovementState& GetCharacterMovementState() { return AnimCtrl->GetCharacterMovementState(); }
 
+	//Setter
+	void SetPitchInput(float pitch);
+	void SetCameraFOV(float FOV) { Camera->FieldOfView = FOV; }
 	//Debug
 	void Debug();
 };

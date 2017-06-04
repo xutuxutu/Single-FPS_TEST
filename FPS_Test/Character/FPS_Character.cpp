@@ -48,6 +48,7 @@ AFPS_Character::AFPS_Character()
 void AFPS_Character::InitProperty()
 {
 	AnimCtrl = Cast<UFPS_CharacterAnimCtrl>(GetMesh()->GetAnimInstance());
+	AnimCtrl->InitNotifyTarget();
 	CurrentEquipWeapon = nullptr;
 	CurrentEquipWeaponType = EWeaponType::NONE;
 }
@@ -101,28 +102,32 @@ void AFPS_Character::SetLandAnim()
 	AnimCtrl->SetIsLand(true);
 }
 
-void AFPS_Character::StartFire()
+bool AFPS_Character::StartFire()
 {
 	if (CurrentEquipWeapon != NULL)
 	{
 		AnimCtrl->SetCharacterActionState(ECharacterActionState::FIRE);
-		if(AnimCtrl->GetIsAiming())
+		if (AnimCtrl->GetIsAiming())
 			AnimCtrl->PlayAimingFireAnim(CurrentEquipWeaponType);
 		else
 			AnimCtrl->PlayFireAnim(CurrentEquipWeaponType);
 
 		CurrentEquipWeapon->StartFire(Camera);
+
+		return CurrentEquipWeapon->GetIsLoopFire();
 	}
+	return false;
 }
 
 void AFPS_Character::EndFire()
 {
 	if (CurrentEquipWeapon != NULL)
 	{
-		if (CurrentEquipWeapon->EndFire())
+		if (CurrentEquipWeapon->GetIsLoopFire())
 		{
 			AnimCtrl->SetCharacterActionState(ECharacterActionState::PEACE);
 			AnimCtrl->StopFireAnim(CurrentEquipWeaponType);
+			CurrentEquipWeapon->EndFire();
 		}
 	}
 }

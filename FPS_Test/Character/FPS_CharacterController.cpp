@@ -16,6 +16,7 @@ AFPS_CharacterController::AFPS_CharacterController()
 	FireForceFeedback = fireForceFeedBack.Object;
 
 	WeaponList = new FFPS_WeaponList;
+	PossibleFire = true;
 	PossibleJump = true;
 	PossibleMove = true;
 	CurrentJumpForce = 0;
@@ -34,7 +35,7 @@ void AFPS_CharacterController::BeginPlay()
 	EquipWeapon_Rifle();
 
 	CapsuleHalfHeight = FVector(0, 0, Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	FPS_WeaponEffectManager::GetInstance()->SetImpactEffect(GetWorld()->SpawnActor<AFPS_WeaponImpactEffect>());
+	FPS_WeaponEffectManager::GetInstance()->SpawnEffectActors();
 }
 
 void AFPS_CharacterController::InitWeaponList()
@@ -84,7 +85,7 @@ void AFPS_CharacterController::FireButtonPress()
 {
 	if (IsPossibleFire())
 	{
-		Character->StartFire();
+		PossibleFire = Character->StartFire();
 		PlayCameraShakeWeaponFire(EWeaponType::RIFLE);
 	}
 }
@@ -217,6 +218,8 @@ bool AFPS_CharacterController::IsPossibleJump()
 
 bool AFPS_CharacterController::IsPossibleFire()
 {
+	if (!PossibleFire)
+		return false;
 	if (Character->GetCharacterActionState() == ECharacterActionState::EQUIP)
 		return false;
 	return true;

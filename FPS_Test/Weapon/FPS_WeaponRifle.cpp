@@ -22,7 +22,9 @@ AFPS_WeaponRifle::AFPS_WeaponRifle() : AFPS_Weapon()
 	SetFireSound(fireSound.Object, fireEndSound.Object);
 	TrailFX = trailFX.Object;
 	TrailFX_Playing = NULL;
+
 	SetWeaponType(EWeaponType::RIFLE);
+	SetLoopFireWeapon(true);
 	CurrentSpread = SPREAD_DEFAULT;
 }
 
@@ -48,7 +50,7 @@ void AFPS_WeaponRifle::StartFire(const UCameraComponent* ViewCamera)
 	}
 }
 
-bool AFPS_WeaponRifle::EndFire()
+void AFPS_WeaponRifle::EndFire()
 {
 	if (GetIsFire())
 	{
@@ -57,9 +59,7 @@ bool AFPS_WeaponRifle::EndFire()
 		DeactivateMuzzleFX();
 		StopFireSound();
 		InitCurrentSpread();
-		return true;
 	}
-	return false;
 }
 
 void AFPS_WeaponRifle::PrintTrailFX(const UCameraComponent* ViewCamera)
