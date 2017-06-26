@@ -14,6 +14,7 @@ enum class ECharacterMovementState : uint8
 	IDLE,
 	MOVE,
 	JUMP,
+	RUN,
 };
 
 UENUM()
@@ -37,10 +38,6 @@ private:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "CharacterState", Meta = (AllowPrivateAccess = "true"))
 	ECharacterActionState ActionState;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Jump", Meta = (AllowPrivateAccess = "true"))
-	bool PlayingStartJump;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Jump", Meta = (AllowPrivateAccess = "true"))
-	bool PlayingEndJump;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Jump", Meta = (AllowPrivateAccess = "true"))
 	bool IsLand;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "CharacterState", Meta = (AllowPrivateAccess = "true"))
 	bool IsAiming;
@@ -50,12 +47,16 @@ private:
 	UPROPERTY()
 	UAnimMontage* RifleEquipAnim;
 	UPROPERTY()
+	UAnimMontage* RifleReloadAnim;
+	UPROPERTY()
 	UAnimMontage* RifleFireAnim;
 	UPROPERTY()
 	UAnimMontage* RifleAimingFireAnim;
 	//Montage_Launcher
 	UPROPERTY()
 	UAnimMontage* LauncherEquipAnim;
+	UPROPERTY()
+	UAnimMontage* LauncherReloadAnim;
 	UPROPERTY()
 	UAnimMontage* LauncherFireAnim;
 	UPROPERTY()
@@ -71,6 +72,7 @@ public :
 	void InitNotifyTarget(); 
 	//Montage
 	void PlayWeaponEquipAnim(EWeaponType& weaponType);
+	void PlayWeaponReloadAnim(EWeaponType& weaponType);
 	void PlayFireAnim(EWeaponType& weaponType);
 	void PlayAimingFireAnim(EWeaponType& weaponType);
 	void StopFireAnim(EWeaponType& weaponType);
@@ -78,12 +80,8 @@ public :
 	UFUNCTION()
 	void AnimNotify_ActionEnd(UAnimNotify* notify);
 	UFUNCTION()
-	void AnimNotify_JumpEnd(UAnimNotify* notify);
-	UFUNCTION()
 	void AnimNotify_FireEnd(UAnimNotify* notify);
 	//Setter
-	void SetJumpStart(bool jumpStart) { PlayingStartJump = jumpStart; }
-	void SetJumpEnd(bool jumpEnd) { PlayingEndJump = jumpEnd; }
 	void SetIsLand(bool isLand) { IsLand = isLand; }
 	void SetAiming(bool isAiming) { IsAiming = isAiming; }
 	void SetWeaponSlotNum(int slotNum) { WeaponSlotNum = slotNum; }

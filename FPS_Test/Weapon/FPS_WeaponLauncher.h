@@ -15,5 +15,5 @@ public:
 	AFPS_WeaponLauncher();
 protected:
 public:	
-	virtual void StartFire(const UCameraComponent* ViewCamera);
+	virtual void StartFire(const UCameraComponent* ViewCamera) override;
 };

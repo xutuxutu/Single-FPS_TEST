@@ -29,11 +29,11 @@ public:
 protected:
 	void PrintTrailFX(const UCameraComponent* ViewCamera);
 	void PrintBulletHitFX();
+	void InitCurrentSpread() { GetIsAiming() ? CurrentSpread = SPREAD_AIMING : CurrentSpread = SPREAD_DEFAULT; }
 public:	
 	virtual void StartFire(const UCameraComponent* ViewCamera) override;
 	virtual void EndFire() override;
 	virtual void SetAiming(bool isAiming) override;
-	void InitCurrentSpread() { GetIsAiming() ? CurrentSpread = SPREAD_AIMING : CurrentSpread = SPREAD_DEFAULT; }
 
 	const float& GetCurrentSpread() { return CurrentSpread; }
 };

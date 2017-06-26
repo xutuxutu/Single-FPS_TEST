@@ -23,15 +23,17 @@ private :
 	USoundCue* FireEndSound;
 	UPROPERTY()
 	UAudioComponent* FireSound_Playing;
+	UPROPERTY()
+	USoundCue* AmmoEmptySound;
 
 	FHitResult HitResult;
 	FName MuzzleFlashPosition;
 	EWeaponType WeaponType;
 	bool LoopFireWeapon;
-	bool IsFire;
 	bool IsAiming;
 	float AttackDistance;
 	int ChargedAmmo;
+	int ReserveAmmo;
 	int MaxChargeAmmo;
 public:	
 	// Sets default values for this actor's properties
@@ -40,12 +42,11 @@ protected:
 	USkeletalMeshComponent* GetMesh() { return Mesh; }
 	const FName& GetMuzzleFlashSocketName() { return MuzzleFlashPosition; }
 	const float& GetAttackDistance() { return AttackDistance; }
-	const bool& GetIsFire() { return IsFire; }
 	const FHitResult& GetHitResult() { return HitResult; }
 
 	void SetLoopFireWeapon(bool isLoop) { LoopFireWeapon = isLoop; }
 	void SetFireSound(USoundCue* fireSound, USoundCue* fireEndSound) { FireSound = fireSound; FireEndSound = fireEndSound; }
-	void SetIsFire(bool isFire) { IsFire = isFire; }
+	void SetAmmoEmptySound(USoundCue* emptySound) { AmmoEmptySound = emptySound; }
 	void SetWeaponType(EWeaponType weaponType) { WeaponType = weaponType; }
 	void SetMuzzleFX(UParticleSystem* muzzleFX) { MuzzleFX = muzzleFX; }
 	void SetWeaponFireHitResult(FVector Start, FVector End);
@@ -56,11 +57,13 @@ protected:
 	UAudioComponent* PlayWeaponSound(USoundCue* sound);
 	void PlayFireSound() { FireSound_Playing = PlayWeaponSound(FireSound); }
 	void StopFireSound();
+	void DecreaseChargedAmmo() { if(ChargedAmmo > 0) ChargedAmmo -= 1; }
 public:		
-	void InitProperty(float attackDistance, int maxChargeAmmo, int chargedAmmo);
-	void IncreaseAmmoQuantity(int ammo) { ChargedAmmo += ammo; }
+	void InitProperty(float attackDistance, int maxChargeAmmo, int chargedAmmo, int reserveAmmo);
 	virtual void StartFire(const UCameraComponent* ViewCamera) { }
 	virtual void EndFire() { }
+	void ReloadAmmo();
+	void PlayAmmoEmptySound() { PlayWeaponSound(AmmoEmptySound); }
 	//Setter
 	void SetActive(bool isActive);
 	virtual void SetAiming(bool isAiming) { IsAiming = isAiming; }
@@ -68,5 +71,7 @@ public:
 	const bool& GetIsLoopFire() { return LoopFireWeapon; }
 	const EWeaponType& GetWeaponType() { return WeaponType; }
 	int GetChargedAmmoQuantity() { return ChargedAmmo; }
+	int GetReserveAmmoQuantity() { return ReserveAmmo; }
+	int GetMaxChargeAmmoQuantity() { return MaxChargeAmmo; }
 	bool GetIsAiming() { return IsAiming; }
 };

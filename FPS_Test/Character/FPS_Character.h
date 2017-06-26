@@ -22,6 +22,7 @@ private:
 	UPROPERTY()
 	class AFPS_Weapon* CurrentEquipWeapon;
 	EWeaponType CurrentEquipWeaponType;
+	bool IsWeaponFire;
 	UPROPERTY()
 	class UFPS_CharacterAnimCtrl* AnimCtrl;
 	//SocketName
@@ -29,7 +30,7 @@ private:
 	//Property
 	float MOVE_SPEED_DEFAULT;
 	float MOVE_SPEED_AIMING;
-	int ReserveAmmo;
+	float MOVE_SPEED_RUN;
 	float CameraRotSpeed;
 	FTransform CAMERA_DEFAULT_TRANSFORM;
 private :
@@ -40,6 +41,7 @@ public:
 	AFPS_Character();
 	void InitProperty();
 	void EquipWeapon(class AFPS_Weapon* weapon);
+	void ReloadAmmo();
 	void CameraShake();
 
 	//Animation
@@ -51,15 +53,18 @@ public:
 	void EndFire();
 	void SetAiming_ZoomIn();
 	void SetAiming_ZoomOut();
+	void SetRunAnim() { AnimCtrl->SetCharacterMovementState(ECharacterMovementState::RUN); }
 
 	//Getter - CharacterProperty
-	const float& GetMoveSpeed() { return AnimCtrl->GetIsAiming() ? MOVE_SPEED_AIMING : MOVE_SPEED_DEFAULT; }
+	const float& GetMoveSpeed();
 	const float& GetCameraRotSpeed() { return CameraRotSpeed; }
 	const USpringArmComponent* GetSpringArmCompnent() { return SpringArm; }
 	//Getter - WeaponProperty
 	const EWeaponType& GetCurrentEquipWeaponType() { return CurrentEquipWeaponType; }
 	const bool& GetIsAiming() { return AnimCtrl->GetIsAiming(); }
 	const float GetCurrentWeaponSpread();
+	AFPS_Weapon* GetCurrentEquipWeapon() { return CurrentEquipWeapon; }
+	const bool& GetIsWeaponFire() { return IsWeaponFire; }
 	//Getter - AnimationProperty
 	const ECharacterActionState& GetCharacterActionState() { return AnimCtrl->GetCharacterActionState(); }
 	const ECharacterMovementState& GetCharacterMovementState() { return AnimCtrl->GetCharacterMovementState(); }
@@ -67,6 +72,7 @@ public:
 	//Setter
 	void SetPitchInput(float pitch);
 	void SetCameraFOV(float FOV) { Camera->FieldOfView = FOV; }
+	void SetOnceFireWeaponFireEnd() { IsWeaponFire = false; }
 	//Debug
 	void Debug();
 };

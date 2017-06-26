@@ -3,20 +3,36 @@
 #include "FPS_Test.h"
 #include "FPS_CharacterHUD.h"
 #include "Character/FPS_CharacterController.h"
+#include "Weapon/FPS_WeaponType.h"
 
 
 AFPS_CharacterHUD::AFPS_CharacterHUD()
 {
+	static ConstructorHelpers::FObjectFinder<UTexture2D> HitTextureOb(TEXT("/Game/UI/HUD/HitIndicator"));
 	static ConstructorHelpers::FObjectFinder<UTexture2D> HUDMainTextureOb(TEXT("/Game/UI/HUD/HUDMain"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> HUDAssets02TextureOb(TEXT("/Game/UI/HUD/HUDAssets02"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> LowHealthOverlayTextureOb(TEXT("/Game/UI/HUD/LowHealthOverlay"));
 
-	CharacterMainHUD = HUDMainTextureOb.Object;
+	static ConstructorHelpers::FObjectFinder<UFont> BigFontOb(TEXT("/Game/UI/HUD/Roboto51"));
+	static ConstructorHelpers::FObjectFinder<UFont> NormalFontOb(TEXT("/Game/UI/HUD/Roboto18"));
 
-	Crosshair[ECrosshairDirection::Left] = UCanvas::MakeIcon(CharacterMainHUD, 43, 402, 25, 9); // left
-	Crosshair[ECrosshairDirection::Right] = UCanvas::MakeIcon(CharacterMainHUD, 88, 402, 25, 9); // right
-	Crosshair[ECrosshairDirection::Top] = UCanvas::MakeIcon(CharacterMainHUD, 74, 371, 9, 25); // top
-	Crosshair[ECrosshairDirection::Bottom] = UCanvas::MakeIcon(CharacterMainHUD, 74, 415, 9, 25); // bottom
-	Crosshair[ECrosshairDirection::Center] = UCanvas::MakeIcon(CharacterMainHUD, 75, 403, 7, 7); // center
+	HitNotifyTexture = HitTextureOb.Object;
+	HUDMainTexture = HUDMainTextureOb.Object;
+	HUDAssets02Texture = HUDAssets02TextureOb.Object;
+	LowHealthOverlayTexture = LowHealthOverlayTextureOb.Object;
+
+	BigFont = BigFontOb.Object;
+	NormalFont = NormalFontOb.Object;
+
+	Crosshair[ECrosshairDirection::Left] = UCanvas::MakeIcon(HUDMainTexture, 43, 402, 25, 9); // left
+	Crosshair[ECrosshairDirection::Right] = UCanvas::MakeIcon(HUDMainTexture, 88, 402, 25, 9); // right
+	Crosshair[ECrosshairDirection::Top] = UCanvas::MakeIcon(HUDMainTexture, 74, 371, 9, 25); // top
+	Crosshair[ECrosshairDirection::Bottom] = UCanvas::MakeIcon(HUDMainTexture, 74, 415, 9, 25); // bottom
+	Crosshair[ECrosshairDirection::Center] = UCanvas::MakeIcon(HUDMainTexture, 75, 403, 7, 7); // center
+
+	GeneralOffset = 20.0f;
 }
+
 
 void AFPS_CharacterHUD::BeginPlay()
 {
@@ -30,13 +46,17 @@ void AFPS_CharacterHUD::DrawHUD()
 
 	SetSizeProperty();
 	DrawCrossHair();
+	DrawWeaponAmmoInfo();
 }
 
 void AFPS_CharacterHUD::SetSizeProperty()
 {
+	CanvasSize.X = Canvas->ClipX - Canvas->OrgX;
+	CanvasSize.Y = Canvas->ClipY - Canvas->OrgY;
+
 	CanvasCenter.X = Canvas->ClipX / 2;
 	CanvasCenter.Y = Canvas->ClipY / 2;
-	UI_SizeRatio = (Canvas->ClipX + Canvas->ClipY) / (1080.f + 2160.f);
+	UI_SizeRatio = (Canvas->ClipX + Canvas->ClipY) / (2048.f + 1080.f);
 }
 
 void AFPS_CharacterHUD::DrawCrossHair()
@@ -84,6 +104,7 @@ void AFPS_CharacterHUD::DrawCrossHair_Rifle()
 			CanvasCenter.Y - Crosshair[ECrosshairDirection::Bottom].VL * UI_SizeRatio / 2 + CrosshairDamper(), UI_SizeRatio);
 	}
 }
+
 void AFPS_CharacterHUD::DrawCrossHair_Launcher()
 {
 	Canvas->SetDrawColor(255, 255, 255, 192);
@@ -120,4 +141,36 @@ float AFPS_CharacterHUD::CrosshairDamper()
 	CurrentWeaponSpread += 300 * FMath::Tan(FMath::DegreesToRadians(UpdateWeaponSpread));
 
 	return CurrentWeaponSpread;
+}
+
+
+void AFPS_CharacterHUD::DrawWeaponAmmoInfo()
+{
+	FCanvasTextItem TextItem(FVector2D::ZeroVector, FText::GetEmpty(), BigFont, FColor::White);
+	TextItem.EnableShadow(FLinearColor::Black);
+	TextItem.Scale = FVector2D(0.73f * UI_SizeRatio, 0.73f * UI_SizeRatio);
+
+	//ChargedAmmo
+	FString AmmoInfo = FString::FromInt(Character->GetCurrentEquipWeapon()->GetChargedAmmoQuantity());
+	const float ChargedAmmo_PosX = Canvas->ClipX - (200 * UI_SizeRatio);
+	const float ChargedAmmo_PosY = Canvas->ClipY - (80 * UI_SizeRatio);
+
+	TextItem.Text = FText::FromString(AmmoInfo);
+	Canvas->DrawItem(TextItem, ChargedAmmo_PosX, ChargedAmmo_PosY);
+
+	//Seperate Word
+	AmmoInfo = FString("/");
+	const float Seperate_PosX = (Canvas->ClipX - (200 * UI_SizeRatio)) + (50 * UI_SizeRatio);
+	const float Seperate_PosY = Canvas->ClipY - (80 * UI_SizeRatio);
+
+	TextItem.Text = FText::FromString(AmmoInfo);
+	Canvas->DrawItem(TextItem, Seperate_PosX, Seperate_PosY);
+
+	//ReserveAmmo
+	AmmoInfo = FString::FromInt(Character->GetCurrentEquipWeapon()->GetReserveAmmoQuantity());
+	const float ReserveAmmo_PosX = (Canvas->ClipX - (200 * UI_SizeRatio)) + (80 * UI_SizeRatio);
+	const float ReserveAmmo_PosY = Canvas->ClipY - (80 * UI_SizeRatio);
+
+	TextItem.Text = FText::FromString(AmmoInfo);
+	Canvas->DrawItem(TextItem, ReserveAmmo_PosX, ReserveAmmo_PosY);
 }

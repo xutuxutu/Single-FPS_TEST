@@ -26,19 +26,22 @@ AFPS_Character::AFPS_Character()
 	SpringArm->SetupAttachment(GetMesh());
 	Camera->SetupAttachment(SpringArm);
 	//Setup Compnent Property
+	GetCapsuleComponent()->SetCollisionObjectType(COLLISION_OWN);
 	GetCapsuleComponent()->SetEnableGravity(false);
 	GetCapsuleComponent()->SetCapsuleHalfHeight(86);
 	GetCapsuleComponent()->SetCapsuleRadius(65);
+
 	RotPibot->SetRelativeLocation(FVector(0, 0, 40));
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0, 0, -126), FRotator(0, -90, 0));
 	GetMesh()->SetEnableGravity(false);
 	SpringArm->TargetArmLength = -7;
 	SpringArm->SetRelativeLocationAndRotation(FVector(0, 0, 149.4f), FRotator(0, 90, 0));
 	//Setup MemberProperty
-	ReserveAmmo = 50;
 	MOVE_SPEED_DEFAULT = 100;
 	MOVE_SPEED_AIMING = 50;
+	MOVE_SPEED_RUN = 180;
 	CameraRotSpeed = 100;
+	IsWeaponFire = false;
 
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 	bFindCameraComponentWhenViewTarget = true;
@@ -63,6 +66,13 @@ void AFPS_Character::EquipWeapon(class AFPS_Weapon* weapon)
 	CurrentEquipWeapon->SetActive(true);
 	CurrentEquipWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, WeaponAttachPoint);
 	SetEquipAnim();
+}
+
+void AFPS_Character::ReloadAmmo()
+{
+	AnimCtrl->PlayWeaponReloadAnim(CurrentEquipWeaponType);
+	AnimCtrl->SetCharacterActionState(ECharacterActionState::RELOAD);
+	CurrentEquipWeapon->ReloadAmmo();
 }
 
 void AFPS_Character::SetPitchInput(float pitch)
@@ -91,20 +101,18 @@ void AFPS_Character::SetEquipAnim()
 
 void AFPS_Character::SetJumpAnim()
 {
-	AnimCtrl->SetJumpStart(true);
 	AnimCtrl->SetIsLand(false);
 	AnimCtrl->SetCharacterMovementState(ECharacterMovementState::JUMP);
 }
 
 void AFPS_Character::SetLandAnim()
 {
-	AnimCtrl->SetJumpEnd(true);
 	AnimCtrl->SetIsLand(true);
 }
 
 bool AFPS_Character::StartFire()
 {
-	if (CurrentEquipWeapon != NULL)
+	if (CurrentEquipWeapon != NULL && !IsWeaponFire)
 	{
 		AnimCtrl->SetCharacterActionState(ECharacterActionState::FIRE);
 		if (AnimCtrl->GetIsAiming())
@@ -113,6 +121,7 @@ bool AFPS_Character::StartFire()
 			AnimCtrl->PlayFireAnim(CurrentEquipWeaponType);
 
 		CurrentEquipWeapon->StartFire(Camera);
+		IsWeaponFire = true;
 
 		return CurrentEquipWeapon->GetIsLoopFire();
 	}
@@ -121,16 +130,18 @@ bool AFPS_Character::StartFire()
 
 void AFPS_Character::EndFire()
 {
-	if (CurrentEquipWeapon != NULL)
+	if (CurrentEquipWeapon != NULL && IsWeaponFire)
 	{
 		if (CurrentEquipWeapon->GetIsLoopFire())
 		{
+			IsWeaponFire = false;
 			AnimCtrl->SetCharacterActionState(ECharacterActionState::PEACE);
 			AnimCtrl->StopFireAnim(CurrentEquipWeaponType);
 			CurrentEquipWeapon->EndFire();
 		}
 	}
 }
+
 void AFPS_Character::SetAiming_ZoomIn()
 {
 	if (CurrentEquipWeapon != NULL)
@@ -158,6 +169,14 @@ void AFPS_Character::SetAiming_ZoomOut()
 const float AFPS_Character::GetCurrentWeaponSpread() 
 {
 	return CurrentEquipWeaponType == EWeaponType::RIFLE ? Cast<AFPS_WeaponRifle>(CurrentEquipWeapon)->GetCurrentSpread() : 2; 
+}
+
+const float& AFPS_Character::GetMoveSpeed()
+{
+	if (AnimCtrl->GetCharacterMovementState() == ECharacterMovementState::RUN)
+		return MOVE_SPEED_RUN;
+
+	return AnimCtrl->GetIsAiming() ? MOVE_SPEED_AIMING : MOVE_SPEED_DEFAULT; 
 }
 
 void AFPS_Character::Debug()

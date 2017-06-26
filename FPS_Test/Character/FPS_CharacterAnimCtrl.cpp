@@ -7,15 +7,20 @@
 UFPS_CharacterAnimCtrl::UFPS_CharacterAnimCtrl()
 {
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> rifleEquip(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_Character_RifleEquip_Montage.BP_FPS_Character_RifleEquip_Montage'"));
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> rifleReload(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_Character_RifleReload_Montage.BP_FPS_Character_RifleReload_Montage'"));
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> rifleFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterRifleFire.BP_FPS_CharacterRifleFire'"));
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> rifleAimingFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterRifleAimingFire.BP_FPS_CharacterRifleAimingFire'"));
 	RifleEquipAnim = rifleEquip.Object;
+	RifleReloadAnim = rifleReload.Object;
 	RifleFireAnim = rifleFire.Object;
 	RifleAimingFireAnim = rifleAimingFire.Object;
+
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> launcherEquip(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterLauncherEquip_Montage.BP_FPS_CharacterLauncherEquip_Montage'"));
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> launcherReload(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterLauncherReload_Montage.BP_FPS_CharacterLauncherReload_Montage'"));
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> launcherFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterLauncherFire.BP_FPS_CharacterLauncherFire'"));
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> launcherAimingFire(TEXT("AnimMontage'/Game/Blueprint/Character/BP_FPS_CharacterLauncherAimingFire.BP_FPS_CharacterLauncherAimingFire'"));
 	LauncherEquipAnim = launcherEquip.Object;
+	LauncherReloadAnim = launcherReload.Object;
 	LauncherFireAnim = launcherFire.Object;
 	LauncherAimingFireAnim = launcherAimingFire.Object;
 
@@ -23,8 +28,6 @@ UFPS_CharacterAnimCtrl::UFPS_CharacterAnimCtrl()
 	MovementState = ECharacterMovementState::IDLE;
 	ActionState = ECharacterActionState::PEACE;
 
-	PlayingStartJump = false;
-	PlayingEndJump = false;
 	IsLand = true;
 	CurrentPlayMontage = NULL;
 }
@@ -53,6 +56,20 @@ void UFPS_CharacterAnimCtrl::PlayWeaponEquipAnim(EWeaponType& weaponType)
 		break;
 	}
 }
+
+void UFPS_CharacterAnimCtrl::PlayWeaponReloadAnim(EWeaponType& weaponType)
+{
+	switch (weaponType)
+	{
+	case EWeaponType::RIFLE:
+		PlayMontageAnim(RifleReloadAnim);
+		break;
+	case EWeaponType::LAUNCHER:
+		PlayMontageAnim(LauncherReloadAnim);
+		break;
+	}
+}
+
 void UFPS_CharacterAnimCtrl::PlayFireAnim(EWeaponType& weaponType)
 {
 	switch (weaponType)
@@ -89,20 +106,9 @@ void UFPS_CharacterAnimCtrl::AnimNotify_ActionEnd(UAnimNotify* notify)
 	switch (ActionState)
 	{
 	case ECharacterActionState::EQUIP :
+	case ECharacterActionState::RELOAD :
 		ActionState = ECharacterActionState::PEACE;
 		break;
-	}
-}
-
-void UFPS_CharacterAnimCtrl::AnimNotify_JumpEnd(UAnimNotify* notify)
-{
-	if (PlayingStartJump)
-		PlayingStartJump = false;
-	else if (PlayingEndJump)
-	{
-		PlayingEndJump = false;
-		if(CharacterController)
-			CharacterController->EndJump();
 	}
 }
 
@@ -110,4 +116,5 @@ void UFPS_CharacterAnimCtrl::AnimNotify_FireEnd(UAnimNotify* notify)
 {
 	if(CharacterController)
 		CharacterController->SetOnceFireEnd();
+	ActionState = ECharacterActionState::PEACE;
 }

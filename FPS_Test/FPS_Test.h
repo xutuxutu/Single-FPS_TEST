@@ -11,3 +11,5 @@ DECLARE_LOG_CATEGORY_EXTERN(ArenaBattle, Log, All);
 #define AB_LOG(Verbosity, Format, ...) UE_LOG(ArenaBattle, Verbosity, TEXT("%s %s"), *AB_LOG_CALLINFO, *FString::Printf(Format, ##__VA_ARGS__)) 
 
 #define COLLISION_PROJECTILE	ECC_GameTraceChannel1
+#define TRIGGER_PROJECTILE		ECC_GameTraceChannel2
+#define COLLISION_OWN			ECC_GameTraceChannel3

@@ -8,8 +8,9 @@
 
 AFPS_CharacterController::AFPS_CharacterController()
 {
-	ConstructorHelpers::FObjectFinder<UBlueprint> camShack_Rifle(TEXT("Blueprint'/Game/Blueprint/Weapons/BP_CamShack_RifleFire.BP_CamShack_RifleFire'"));
-	CamShake_RifleFire = camShack_Rifle.Object->StaticClass();
+	ConstructorHelpers::FClassFinder<UCameraShake> camShack_Rifle(TEXT("/Game/Blueprint/Weapons/BP_CamShack_RifleFire.BP_CamShack_RifleFire_C"));
+	CamShake_RifleFire = camShack_Rifle.Class;
+
 	ConstructorHelpers::FObjectFinder<UBlueprint> camShack_Launcher(TEXT("Blueprint'/Game/Blueprint/Weapons/BP_CamShack_LauncherFire.BP_CamShack_LauncherFire'"));
 	CamShake_LauncherFire = camShack_Launcher.Object->StaticClass();
 	ConstructorHelpers::FObjectFinder<UForceFeedbackEffect> fireForceFeedBack(TEXT("ForceFeedbackEffect'/Game/Effects/ForceFeedback/FFE_Fire.FFE_Fire'"));
@@ -22,6 +23,8 @@ AFPS_CharacterController::AFPS_CharacterController()
 	CurrentJumpForce = 0;
 	CurrentCameraFOV = CAMERA_DEFAULT_FOV;
 	IsLand = true;
+	AimingWeapon = false;
+	IsRun = false;
 	//PlayerCameraManagerClass = AFPS_CharacterCameraManager::StaticClass();
 	FPS_WeaponEffectManager::CreateInstance();
 }
@@ -42,8 +45,8 @@ void AFPS_CharacterController::InitWeaponList()
 {
 	AFPS_Weapon* Rifle = GetWorld()->SpawnActor<AFPS_WeaponRifle>(AFPS_WeaponRifle::StaticClass());
 	AFPS_Weapon* Launcher = GetWorld()->SpawnActor<AFPS_WeaponLauncher>(AFPS_WeaponLauncher::StaticClass());
-	Rifle->InitProperty(2000, 50, 0);
-	Launcher->InitProperty(5000, 6, 0);
+	Rifle->InitProperty(2000, 50, 0, 100);
+	Launcher->InitProperty(5000, 6, 0, 100);
 
 	WeaponList->AddWeapon(Rifle);
 	WeaponList->AddWeapon(Launcher);
@@ -59,6 +62,7 @@ void AFPS_CharacterController::PlayerTick(float DeltaTime)
 
 	CharacterRotate();
 	CharacterMovement();
+	AutoReloadAmmo();
 	Character->Debug();
 }
 
@@ -76,41 +80,96 @@ void AFPS_CharacterController::SetupInputComponent()
 	InputComponent->BindAction("Jump", IE_Pressed, this, &AFPS_CharacterController::JumpKeyDown);
 	InputComponent->BindAction("Aiming", IE_Pressed, this, &AFPS_CharacterController::AimingButtonPress);
 	InputComponent->BindAction("Aiming", IE_Released, this, &AFPS_CharacterController::AimingButtonRelease);
+	InputComponent->BindAction("Reload", IE_Pressed, this, &AFPS_CharacterController::ReloadAmmo);
+	InputComponent->BindAction("Run", IE_Pressed, this, &AFPS_CharacterController::RunButtonPress);
+	InputComponent->BindAction("Run", IE_Released, this, &AFPS_CharacterController::RunButtonRelease);
 }
 void AFPS_CharacterController::MouseMove_X(float x) { MouseXY.X = x; }
 void AFPS_CharacterController::MouveMove_Y(float y) { MouseXY.Y = y; }
 void AFPS_CharacterController::ForwardMoveKeyDown(float forward) { MoveVector.X = forward; }
 void AFPS_CharacterController::RightMoveKeyDown(float right) { MoveVector.Y = right; }
+void AFPS_CharacterController::ReloadAmmo() 
+{ 
+	if (IsPossibleReload())
+	{
+		if (Character->GetIsWeaponFire())
+			Character->EndFire();
+
+		Character->ReloadAmmo();
+		if (AimingWeapon)
+			AimingButtonRelease();
+	}
+}
 void AFPS_CharacterController::FireButtonPress() 
 {
 	if (IsPossibleFire())
 	{
-		PossibleFire = Character->StartFire();
-		PlayCameraShakeWeaponFire(EWeaponType::RIFLE);
+		if (Character->GetCurrentEquipWeapon()->GetChargedAmmoQuantity() > 0)
+		{
+			PossibleFire = Character->StartFire();
+			PlayCameraShakeWeaponFire(EWeaponType::RIFLE);
+			if (IsRun)
+				RunButtonRelease();
+		}
+		else
+			Character->GetCurrentEquipWeapon()->PlayAmmoEmptySound();
 	}
 }
-void AFPS_CharacterController::FireButtonRelease() { Character->EndFire(); }
+void AFPS_CharacterController::FireButtonRelease() { Character->EndFire();  }
 void AFPS_CharacterController::AimingButtonPress() 
 {
-	Character->SetAiming_ZoomIn(); 
-	FTimerDelegate del = FTimerDelegate::CreateUObject(this, &AFPS_CharacterController::SetCameraFOV, CAMERA_AIMING_FOV);
-	GetWorldTimerManager().SetTimer(AimingTH, del, GWorld->GetDeltaSeconds(), true);
+	if (IsPossibleAiming())
+	{
+		if (IsRun)
+			RunButtonRelease();
+		AimingWeapon = true;
+		Character->SetAiming_ZoomIn();
+		FTimerDelegate del = FTimerDelegate::CreateUObject(this, &AFPS_CharacterController::SetCameraFOV, CAMERA_AIMING_FOV);
+		GetWorldTimerManager().SetTimer(AimingTH, del, GWorld->GetDeltaSeconds(), true); 
+	}
 }
 void AFPS_CharacterController::AimingButtonRelease() 
 {
-	Character->SetAiming_ZoomOut(); 
-	FTimerDelegate del = FTimerDelegate::CreateUObject(this, &AFPS_CharacterController::SetCameraFOV, CAMERA_DEFAULT_FOV);
-	GetWorldTimerManager().SetTimer(AimingTH, del, GWorld->GetDeltaSeconds(), true);
+	if (AimingWeapon)
+	{
+		AimingWeapon = false;
+		Character->SetAiming_ZoomOut();
+		FTimerDelegate del = FTimerDelegate::CreateUObject(this, &AFPS_CharacterController::SetCameraFOV, CAMERA_DEFAULT_FOV);
+		GetWorldTimerManager().SetTimer(AimingTH, del, GWorld->GetDeltaSeconds(), true);
+	}
 }
 void AFPS_CharacterController::JumpKeyDown()
 {
 	if (IsPossibleJump())
 	{
 		Character->bPressedJump = true;
+		PossibleMove = false;
 		PossibleJump = false;
 		IsLand = false;
 		Character->SetJumpAnim();
 		GetWorldTimerManager().SetTimer(JumpTH, this, &AFPS_CharacterController::CheckGround, GWorld->GetDeltaSeconds(), true, 0.5f);
+	}
+}
+void AFPS_CharacterController::RunButtonPress()
+{
+	if (IsPossibleRun())
+	{
+		IsRun = true;
+		if (AimingWeapon)
+			AimingButtonRelease();
+		if (Character->GetCharacterActionState() == ECharacterActionState::FIRE)
+		{
+			if (Character->GetCurrentEquipWeapon()->GetIsLoopFire())
+				FireButtonRelease();
+		}
+
+	}
+}
+void AFPS_CharacterController::RunButtonRelease()
+{
+	if (IsRun)
+	{
+		IsRun = false;
 	}
 }
 
@@ -121,7 +180,14 @@ void AFPS_CharacterController::CharacterMovement()
 	{
 		if (MoveVector.Size() > 0)
 		{
-			Character->SetMoveAnim();
+			if (MoveVector.X < 0)
+				RunButtonRelease();
+
+			if (IsRun)
+				Character->SetRunAnim();
+			else
+				Character->SetMoveAnim();
+
 			MoveVector = GetPawn()->GetActorTransform().TransformVector(MoveVector);
 			GetPawn()->AddMovementInput(MoveVector * Character->GetMoveSpeed() * GWorld->GetDeltaSeconds());
 		}
@@ -149,10 +215,30 @@ void AFPS_CharacterController::CheckGround()
 	if (!IsLand && GetWorld()->LineTraceSingleByObjectType(hitResult, StartPos, StartPos - FVector(0, 0, 3), ECollisionChannel::ECC_WorldStatic))
 	{
 		GetWorldTimerManager().ClearTimer(JumpTH);
+		PossibleMove = true;
 		IsLand = true;
 		Character->SetLandAnim();
+		GetWorldTimerManager().SetTimer(JumpTH, this, &AFPS_CharacterController::EndJump, 0.5f, false);
 	}
 }
+
+void AFPS_CharacterController::AutoReloadAmmo()
+{
+	if (Character->GetCurrentEquipWeapon()->GetChargedAmmoQuantity() <= 0)
+	{
+		if (Character->GetIsWeaponFire())
+			Character->EndFire();
+
+		if (IsPossibleReload())
+		{
+			if (AimingWeapon)
+				AimingButtonRelease();
+
+			Character->ReloadAmmo();
+		}
+	}
+}
+
 void AFPS_CharacterController::SetCameraFOV(float targetFOV)
 {
 	CurrentCameraFOV = FMath::Lerp(CurrentCameraFOV, targetFOV, GWorld->GetDeltaSeconds() * 10);
@@ -203,16 +289,30 @@ bool AFPS_CharacterController::IsPossibleMove()
 {
 	if (!PossibleMove)
 		return false;
-	if (Character->GetCharacterMovementState() == ECharacterMovementState::JUMP)
-		return false;
 
 	return true;
 }
 
 bool AFPS_CharacterController::IsPossibleJump()
 {
+	if (Character->GetCharacterMovementState() == ECharacterMovementState::JUMP)
+		return false;
 	if (!PossibleJump || !IsLand)
 		return false;
+	return true;
+}
+
+bool AFPS_CharacterController::IsPossibleReload()
+{
+	if (Character->GetCurrentEquipWeapon()->GetReserveAmmoQuantity() <= 0 || 
+		Character->GetCurrentEquipWeapon()->GetChargedAmmoQuantity() >= Character->GetCurrentEquipWeapon()->GetMaxChargeAmmoQuantity())
+		return false;
+
+	if (Character->GetCharacterActionState() == ECharacterActionState::EQUIP || Character->GetCharacterActionState() == ECharacterActionState::RELOAD)
+		return false;
+	if (!PossibleFire)
+		return false;
+
 	return true;
 }
 
@@ -220,9 +320,34 @@ bool AFPS_CharacterController::IsPossibleFire()
 {
 	if (!PossibleFire)
 		return false;
-	if (Character->GetCharacterActionState() == ECharacterActionState::EQUIP)
+	if (Character->GetCharacterActionState() != ECharacterActionState::PEACE)
 		return false;
 	return true;
+}
+
+bool AFPS_CharacterController::IsPossibleAiming()
+{
+	if (!PossibleFire)
+		return false;
+
+	if (AimingWeapon || Character->GetCharacterActionState() != ECharacterActionState::PEACE)
+		return false;
+
+	return true;
+}
+
+bool AFPS_CharacterController::IsPossibleRun()
+{
+	if (Character->GetCharacterMovementState() == ECharacterMovementState::JUMP)
+		return false;
+
+	return true;
+}
+
+void AFPS_CharacterController::SetOnceFireEnd()
+{ 
+	PossibleFire = true; 
+	Character->SetOnceFireWeaponFireEnd();
 }
 
 void AFPS_CharacterController::PlayCameraShakeWeaponFire(EWeaponType weaponType)
@@ -237,7 +362,11 @@ void AFPS_CharacterController::PlayCameraShakeWeaponFire(EWeaponType weaponType)
 		ClientPlayCameraShake(CamShake_LauncherFire, 1);
 		break;
 	}*/
+
 	AB_LOG(Warning, TEXT("Shake"));
-	ClientPlayCameraShake(CamShake_RifleFire, 1, ECameraAnimPlaySpace::World, FRotator(0, 0, 0));
+	/*
+	UClass* ShakeClass = CamShakeRifleClass.TryLoadClass<UCameraShake>();
+	ClientPlayCameraShake(ShakeClass, 1);
 	ClientPlayForceFeedback(FireForceFeedback, false, "Weapon");
+	*/
 }

@@ -15,13 +15,29 @@ AFPS_Weapon::AFPS_Weapon()
 	MuzzleFlashPosition = TEXT("MuzzleFlashSocket");
 }
 
-void AFPS_Weapon::InitProperty(float attackDistance, int maxChargeAmmo, int chargedAmmo)
+void AFPS_Weapon::InitProperty(float attackDistance, int maxChargeAmmo, int chargedAmmo, int reserveAmmo)
 {
 	AttackDistance = attackDistance;
 	MaxChargeAmmo = maxChargeAmmo;
 	ChargedAmmo = chargedAmmo;
+	ReserveAmmo = reserveAmmo;
 	IsAiming = false;
-	IsFire = false;
+}
+
+void AFPS_Weapon::ReloadAmmo()
+{
+	if (ReserveAmmo > 0)
+	{
+		int reloadAmount = MaxChargeAmmo - ChargedAmmo;
+		if (ReserveAmmo >= reloadAmount)
+			ReserveAmmo -= reloadAmount;
+		else
+		{
+			reloadAmount = ReserveAmmo;
+			ReserveAmmo = 0;
+		}
+		ChargedAmmo += reloadAmount;
+	}
 }
 
 void AFPS_Weapon::SetActive(bool isActive)
@@ -31,7 +47,7 @@ void AFPS_Weapon::SetActive(bool isActive)
 
 void AFPS_Weapon::SetWeaponFireHitResult(FVector Start, FVector End)
 {
-	if (!GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ECollisionChannel::ECC_WorldStatic))
+	if (!GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ECollisionChannel::ECC_Destructible))
 	{
 		HitResult.ImpactPoint = End;
 		HitResult.Actor = nullptr;

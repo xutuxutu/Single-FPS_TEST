@@ -24,24 +24,40 @@ class FPS_TEST_API AFPS_CharacterHUD : public AHUD
 private :
 	class AFPS_CharacterController* CharacterController;
 	class AFPS_Character* Character;
-	UTexture2D* CharacterMainHUD;
+
+	//Texture Atlas
+	UTexture2D* HitNotifyTexture;
+	UTexture2D* HUDMainTexture;
+	UTexture2D* HUDAssets02Texture;
+	UTexture2D* LowHealthOverlayTexture;
 
 	//Size Property
+	float GeneralOffset;
+
+	FVector2D CanvasSize;
 	FVector2D CanvasCenter;
 	float UI_SizeRatio;	
 	float CurrentWeaponSpread;
 	float UpdateWeaponSpread;
-	/** Crosshair icons (left, top, right, bottom and center). */
-	UPROPERTY()
+
 	FCanvasIcon Crosshair[5];
+
+	UPROPERTY()
+	UFont* BigFont;
+	UPROPERTY()
+	UFont* NormalFont;
+private :
+
 protected :
 	virtual void BeginPlay() override;
-
 	void SetSizeProperty();
+	//CrossHair
 	void DrawCrossHair();
 	void DrawCrossHair_Rifle();
 	void DrawCrossHair_Launcher();
 	float CrosshairDamper();
+	//Weapon
+	void DrawWeaponAmmoInfo();
 public :
 	AFPS_CharacterHUD();
 
